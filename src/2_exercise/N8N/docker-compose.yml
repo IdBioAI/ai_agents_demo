@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  n8n:
+    build: .
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=admin
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=Europe/Prague
+      - NODE_FUNCTION_ALLOW_EXTERNAL=axios,node-fetch,moment,uuid
+    depends_on:
+      - mysql
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - n8n-network
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=library_db
+      - MYSQL_USER=library_user
+      - MYSQL_PASSWORD=library_password
+    ports:
+      - "8547:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - n8n-network
+volumes:
+  n8n_data:
+  mysql_data:
+networks:
+  n8n-network:
+    driver: bridge
