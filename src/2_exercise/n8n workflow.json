@@ -1,0 +1,208 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "d51bd6d7-a5ff-492b-a26c-3d92cc8a2024",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        -16
+      ],
+      "id": "82356696-bd02-4a48-9bc8-a3b25dd662f0",
+      "name": "Webhook",
+      "webhookId": "d51bd6d7-a5ff-492b-a26c-3d92cc8a2024"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Webhook').item.json.body.msg }}",
+        "options": {
+          "systemMessage": "You are a helpful assistant\n\nYou are a library assistant that can only answer questions related to the library database and book management. If a user asks about anything outside of library and book-related topics, respond with:\n\"Omlouvám se, ale mohu odpovídat pouze na otázky týkající se knihovní databáze a správy knih. Na tuto otázku nemohu odpovědět.\"\n\nYou have access to a library database containing information about:\nDATABASE SCHEMA INFORMATION:\nYou have access to a library database with the following tables:\n**AUTHORS TABLE:**\n- table name: authors\n- id (Primary Key)\n- name (VARCHAR(255)) - Author's full name\n- birth_year (INT) - Year of birth\n- nationality (VARCHAR(100)) - Author's nationality\n\n**BOOKS TABLE:**\n- table name: books\n- id (Primary Key)\n- title (VARCHAR(255)) - Book title\n- author_id (Foreign Key to authors.id)\n- isbn (VARCHAR(13)) - Book ISBN\n- year_published (INT) - Publication year\n- genre (VARCHAR(100)) - Book genre\n- available_copies (INT) - Currently available copies\n- total_copies (INT) - Total copies owned\n\n**LOANS TABLE:**\n- table name: loans\n- id (Primary Key)\n- book_id (Foreign Key to books.id)\n- borrower_name (VARCHAR(255)) - Name of person who borrowed\n- borrower_email (VARCHAR(255)) - Email of borrower\n- loan_date (DATE) - When book was borrowed\n- return_date (DATE) - Expected return date\n- returned (BOOLEAN) - Whether book has been returned\n\nRELATIONSHIPS:\n- books.author_id → authors.id\n- loans.book_id → books.id\n\nSTRICT SCOPE LIMITATION:\nYou can ONLY respond to questions about:\n- Book availability and inventory\n- Author information\n- Loan status and borrower information\n- Library statistics and reports\n- Book searches and recommendations from the database\n\nDo NOT engage with questions about:\n- General knowledge not related to the library\n- Personal advice\n- Current events\n- Other topics outside library management",
+          "maxIterations": 10
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        272,
+        -16
+      ],
+      "id": "79ec56bb-9c8d-4c0b-a234-3178d1716cd5",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        176,
+        256
+      ],
+      "id": "2df6f88b-b1bf-4cfd-b3b3-c8446584d679",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "k19RRFkR4fpDkHOL",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        256
+      ],
+      "id": "669f4ac0-381f-43dc-a868-bba9ec31a11a",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"message\":  {{ JSON.stringify($('AI Agent').item.json.output) }}\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        720,
+        -16
+      ],
+      "id": "7cb30047-eb98-4dc6-9ad2-9b21bc9d6200",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": {
+          "__rl": true,
+          "value": "={{ $fromAI('Table', ``, 'string') }}",
+          "mode": "name"
+        },
+        "limit": "={{ $fromAI('Limit', ``, 'number') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySqlTool",
+      "typeVersion": 2.4,
+      "position": [
+        592,
+        256
+      ],
+      "id": "5c87e9de-21ea-40cd-838e-4747014136c2",
+      "name": "Select rows from a table in MySQL",
+      "notesInFlow": false,
+      "credentials": {
+        "mySql": {
+          "id": "i1YzkXQthforTptw",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "See github:\nhttps://github.com/IdBioAI/ai_agents_demo/tree/master/src/2_exercise",
+        "height": 96,
+        "width": 512
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -80,
+        -144
+      ],
+      "typeVersion": 1,
+      "id": "a4242428-0099-49ad-813b-5c1a862bb499",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select rows from a table in MySQL": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fe04599b-1349-4a25-bbc4-03383be775a8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b7843591c4f6a24561b82ab2443eb255ea67b50c320558cd3adb71d5237602ff"
+  },
+  "id": "BHA946dhaIiuctAD",
+  "tags": []
+}
